@@ -1,0 +1,488 @@
+红葡萄酒质量分析 by ZJW
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# 加载你最终使用的所有组件
+# 在这个代码块的分析中。
+
+# 注意，在这个代码块中，将参数 "echo" 设为假。
+# This prevents the code from displaying in the knitted HTML output.这可以避免代码混入 HTML 输出显示。
+# 应当在文件中，对所有代码块设为 echo=FALSE 。
+
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Load_the_Data}
+# 加载数据
+winedf <- read.csv('wineQualityReds.csv', header = T, check.names = F)
+keepvars <- c("fixed.acidity","volatile.acidity","citric.acid","residual.sugar","chlorides","free.sulfur.dioxide","total.sulfur.dioxide","density","pH","sulphates","alcohol","quality")
+winedf <- winedf[keepvars]
+```
+
+# 单变量绘图选择
+```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_Plots}
+str(winedf)
+summary(winedf)
+```
+
+红葡萄酒数据含有12个变量，前面11个都是测量指标，第12个是评分指标。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 质量打分分布直方图
+ggplot(aes(x = quality), data = winedf)  +
+  geom_histogram()
+```
+
+quality打分指标，最小值是3，最大值是8，中位数6，成正态分布。
+另外，观察到该变量都是整数，后面做观察的时候会转为factor变量。
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 固定酸分布直方图
+ggplot(aes(x = fixed.acidity), data = winedf)  +
+  geom_histogram()
+
+head(sort(table(winedf$fixed.acidity),decreasing = T))
+```
+
+固定酸数据轻微右倾，大部分在7.2左右，范围4.6到15.9。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 挥发性酸分布直方图
+ggplot(aes(x = volatile.acidity), data = winedf)  +
+  geom_histogram()
+
+head(sort(table(winedf$volatile.acidity),decreasing = T))
+```
+
+挥发性酸数据轻微右倾，大部分在0.6左右，范围0.12到1.58。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 柠檬酸分布直方图
+ggplot(aes(x = citric.acid), data = winedf)  +
+  geom_histogram() 
+
+# 柠檬酸分布直方图，对数分布
+ggplot(aes(x = citric.acid), data = winedf)  +
+  geom_histogram(binwidth = 0.08)  +
+  scale_x_log10()
+
+head(sort(table(winedf$citric.acid),decreasing = T))
+```
+
+柠檬酸数据右倾严重，log转化以后，成正态分布且有双峰现象（集中在0.49和0.1附近），另外还有很多0的数据。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 残留糖分布直方图
+ggplot(aes(x = residual.sugar), data = winedf)  +
+  geom_histogram() +
+  scale_x_log10()
+```
+
+残留糖的第三四分位数是2.6，最大的是15，该指标右倾比较严重。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 氯化物分布直方图
+ggplot(aes(x = chlorides), data = winedf)  +
+  geom_histogram()
+```
+
+氯化物y右倾分布明显，主要集中在0.08左右
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 游离二氧化硫分布直方图
+ggplot(aes(x = free.sulfur.dioxide), data = winedf)  +
+  geom_histogram(binwidth = 0.05) +
+  scale_x_log10()
+
+# 二氧化硫总量分布直方图
+ggplot(aes(x = total.sulfur.dioxide), data = winedf)  +
+  geom_histogram() +
+  scale_x_log10()
+
+summary(winedf$total.sulfur.dioxide)
+head(sort(table(winedf$total.sulfur.dioxide),decreasing = T))
+```
+
+游离二氧化硫的分布熟在3到5之间有断层，不清楚是因为数据缺失导致的还是其他原因。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 结合形式二氧化硫变量创建，与分布直方图
+winedf$combine.sulfur.dioxide <- winedf$total.sulfur.dioxide - winedf$free.sulfur.dioxide
+ggplot(aes(x = combine.sulfur.dioxide), data = winedf)  +
+  geom_histogram(binwidth = 0.05) +
+  scale_x_log10()
+
+summary(winedf$combine.sulfur.dioxide)
+head(sort(table(winedf$combine.sulfur.dioxide),decreasing = T))
+```
+
+创建游离combine.sulfur.dioxide变量，该变量是二氧化硫总量减去游离二氧化硫。该变量和二氧化硫总量变量一样，有非常大的异常值。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 密度分布直方图
+ggplot(aes(x = density), data = winedf)  +
+  geom_histogram()
+
+# pH分布直方图
+ggplot(aes(x = pH), data = winedf)  +
+  geom_histogram()
+```
+
+密度与pH均成明显的正态分布。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 硫酸盐分布直方图
+ggplot(aes(x = sulphates), data = winedf)  +
+  geom_histogram()
+
+summary(winedf$sulphates)
+```
+
+硫酸盐是一种抗微生物剂和抗氧化剂。
+硫酸盐变量最小值0.33，最大值2.0,中位数0.62，3/4分位0.73，有少量葡萄酒数据硫酸盐特别高。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 酒精分布直方图
+ggplot(aes(x = alcohol), data = winedf)  +
+  geom_histogram()
+
+summary(winedf$alcohol)
+```
+
+酒精变量右倾明显，大部分葡萄酒酒精都在9%左右，一直到14%，依次减少。
+
+# 单变量分析
+
+### 你的数据集结构是什么？
+一共1599条记录，共12个变量(fixed.acidity,volatile.acidity,citric.acid,residual.sugar,chlorides,free.sulfur.dioxide,total.sulfur.dioxide,density,pH,sulphates,alcohol,quality)。
+每行是一个红葡萄酒的检验记录，每列是不同指标的检测值，最后一列quality为打分（来自至少3位专家的打分的中位数）
+
+#### 其他：
+- quality打分指标，最小值是3，最大值是8，中位数6，成正态分布。
+- 固定酸数据轻微右倾，大部分在7.2左右，范围4.6到15.9。
+- 挥发性酸数据轻微右倾，大部分在0.6左右，范围0.12到1.58。
+- 柠檬酸数据右倾严重，log转化以后，成正态分布且有双峰现象（集中在0.49和0.1附近），另外还有很多0的数据。
+- 有少量葡萄酒数据硫酸盐特别高。
+- 酒精变量右倾明显，大部分葡萄酒酒精都在9%左右，一直到14%，依次减少。
+
+
+### 你的数据集内感兴趣的主要特性有哪些？
+我认为各种酸（固定酸、挥发性酸、柠檬酸）和残留糖对葡萄酒的打分影响最大。因为挥发性酸度过高会导致令人不快的醋味，柠檬酸影响着葡萄酒的“新鲜度”和风味，而过多的残留糖会导致葡萄酒变得过甜。
+
+
+### 你认为数据集内哪些其他特征可以帮助你探索兴趣特点？
+游离二氧化硫和硫酸盐都有防止微生物的生长和葡萄酒的氧化的作用，是否有相关性。
+
+
+### 根据数据集内已有变量，你是否创建了任何新变量？
+创建游离combine.sulfur.dioxide变量，该变量是二氧化硫总量减去游离二氧化硫。该变量和二氧化硫总量变量一样，有非常大的异常值。
+
+### 在已经探究的特性中，是否存在任何异常分布？你是否对数据进行一些操作，如清洁、调整或改变数据的形式？如果是，你为什么会这样做？
+柠檬酸数据右倾严重，log转化以后，成正态分布且有双峰现象（集中在0.49和0.1附近）。
+因为quality质量打分变量是整数，后面会将该变量转为因数变量(factor类型)，做一些分析。
+
+
+# 双变量绘图选择
+```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots}
+# 相关性系数
+cor(winedf)
+```
+
+#### 初步观察,与质量打分相关性较高的如下：
+- quality与alcohol正相关，0.476
+- quality与volatile.acidity负相关，-0.39
+
+#### 另外还发现了其他相关特性:
+- 固定酸与柠檬酸成正相关,相关性0.672
+- 固定酸与密度成正相关，相关性0.668
+- 固定酸与pH成负相关，相关性-0.683
+- 挥发性酸与柠檬酸成负相关，相关性-0.552
+- 柠檬酸与pH成负相关，相关性-0.542
+- 密度与酒精成负相关，相关性-0.496
+- 密度与残留糖成正相关，相关性0.355
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width = 14, fig.height = 9, out.width = "1026", out.height = "528"}
+# 质量打分变量类型转换，绘制数据集的矩阵图
+tmpdf <- data.frame(winedf)
+tmpdf$quality <- as.factor(tmpdf$quality)
+ggpairs(tmpdf)
+```
+
+之前的猜测是各种酸（固定酸、挥发性酸、柠檬酸）和残留糖对葡萄酒的打分影响最大。因为挥发性酸度过高会导致令人不快的醋味，柠檬酸影响着葡萄酒的“新鲜度”和风味，而过多的残留糖会导致葡萄酒变得过甜。
+
+根据上面的图，发现质量打分受到挥发性酸影响最大，而固定酸、柠檬酸和残留糖影响较小，另外还发现了质量打分与酒精关系较大。
+
+为了进一步探索相关性，接下来通过绘制箱线图，更直观的发现质量和挥发性酸与酒精密切的关系。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 质量与酒精的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = alcohol), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+```
+
+质量与酒精成正相关
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 质量与挥发性酸的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = volatile.acidity), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+
+```
+
+质量与挥发性酸成负相关
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# 质量与柠檬酸的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = citric.acid), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+```
+
+质量与柠檬酸成正相关。
+质量分别与挥发性酸成负相关与正相关。说明含量太高的挥发性酸会使分数大打折扣，而高酒精度则可以提升葡萄酒的质量。另外，还发现质量与柠檬酸的含量也是关系比较密切的，尽管我们刚才单看相关性系数没有发现，但是从这幅途中可以看出正相关性。
+
+总结一下，目前发现了质量打分与酒精和柠檬酸成正相关，与挥发性酸成负相关。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 质量与残留糖的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = residual.sugar), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+
+# 质量与游离二氧化硫的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = free.sulfur.dioxide), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+
+# 质量与pH的箱线图，并做线性拟合
+ggplot(aes(x = as.factor(quality), y = pH), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+```
+
+这里分别观察了质量与残留糖、游离二氧化硫和pH的关系，均未能发现相关性。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 密度与酒精的箱线图，并做线性拟合
+ggplot(aes(x = density, y = alcohol), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+```
+
+酒精与密度成负相关,因为酒精会稀释葡萄酒。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 固定酸与柠檬酸的箱线图，并做线性拟合
+ggplot(aes(x = fixed.acidity, y = citric.acid), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+
+# 密度与柠檬酸的箱线图，并做线性拟合
+ggplot(aes(x = density, y = citric.acid), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+
+# pH与柠檬酸的箱线图，并做线性拟合
+ggplot(aes(x = pH, y = citric.acid), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+```
+
+- 柠檬酸与固定酸成正相关
+- 柠檬酸与密度成正相关（符合常识）
+- 柠檬酸与pH成负相关（符合常识）
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 固定酸与挥发性酸的箱线图，并做线性拟合
+ggplot(aes(x = fixed.acidity, y = volatile.acidity), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+
+# 柠檬酸与挥发性酸的箱线图，并做线性拟合
+ggplot(aes(x = citric.acid, y = volatile.acidity), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+```
+
+挥发性酸与固定酸、柠檬酸成负相关
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# log(硫酸盐)与log(挥发性酸)的箱线图，并做线性拟合
+ggplot(aes(x = log(sulphates), y = log(volatile.acidity)), data = winedf) +
+  geom_point(alpha = 1/2) +
+  geom_smooth(method='lm')
+```
+
+log(挥发性酸)和log(硫酸盐)成负相关
+
+### 总结:
+#### 与质量打分成正相关的指标受其他因素的影响
+- 酒精与密度成负相关,因为酒精会稀释葡萄酒。
+- 柠檬酸与固定酸成正相关
+- 柠檬酸与密度成正相关（符合常识）
+- 柠檬酸与pH成负相关（符合常识）
+
+#### 与质量打分成负相关的因素受其他因素的影响
+- 挥发性酸与固定酸、柠檬酸成负相关
+- log(挥发性酸)和log(硫酸盐)成负相关
+
+因此，我们还可以做的是，控制这些二级因素，来间接的控制葡萄酒的质量。具体做法是增加固定酸和硫酸盐。
+
+# 双变量分析
+
+### 探讨你在这部分探究中观察到的一些关系。这些感兴趣的特性与数据集内其他特性有什么区别？
+目前发现，与葡萄酒质量打分一级相关的是酒精、柠檬酸和挥发性酸（与酒精和柠檬酸成正相关，与挥发性酸成负相关）。
+
+### 你是否观察到主要特性与其他特性之间的有趣关系？
+主要特性中酒精和柠檬酸成正相关,挥发性酸与固定酸、柠檬酸成负相关，log(挥发性酸)和log(硫酸盐)成负相关。由于他们可以影响到主要特性，所以可以通过间接控制这些特性来提高葡萄酒质量。
+
+所以，到目前为止可以得出的结论是提升酒精与柠檬酸，降低挥发性酸。另外，还可以增加固定酸与硫酸盐。
+
+### 你发现最强的关系是什么？
+最强的应该是柠檬酸与固定酸之间的强相关关系。也许柠檬酸本身就属于固定酸。
+
+- 固定酸与柠檬酸成正相关,相关性0.672
+- 固定酸与密度成正相关，相关性0.668
+
+
+# 多变量绘图选择
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots}
+# 质量与挥发性酸和酒精
+ggplot(aes(x = as.factor(quality), y = volatile.acidity), data = winedf) +
+geom_jitter(alpha = 1/2,aes(color = cut(alcohol, breaks = 3))) +
+geom_boxplot(alpha = 1/2, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+```
+
+质量与挥发性酸和酒精的关系，可以看出质量不只受到挥发性酸的影响，也受到了酒精的影响。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 质量与挥发性酸和柠檬酸
+ggplot(aes(x = as.factor(quality), y = volatile.acidity), data = winedf) +
+geom_jitter(alpha = 1/2,aes(color = cut(citric.acid, breaks = 3))) +
+geom_boxplot(alpha = 1/2, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1))
+
+```
+
+质量与会发性酸和柠檬酸的关系，在质量相同的情况下，柠檬酸含量高的挥发性酸低，表现了他们之间的负相关性。
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 创建线性模型并预测
+m1 <- lm(formula = quality ~ alcohol, data = winedf)
+m2 <- update(m1, ~ . + volatile.acidity)
+m3 <- update(m2, ~ . + citric.acid)
+m4 <- update(m3, ~ . + fixed.acidity)
+m5 <- update(m4, ~ . + I(log(sulphates)))
+mtable(m1, m2, m3, m4, m5)
+```
+结合上面所有的分析，我们把酒精、柠檬酸、挥发性酸、固定酸和log(硫酸盐)作为参数加入到线性模型中进行拟合。最终模型可以解释35.3%的红葡萄酒数据。
+
+# 多变量分析
+
+###  探讨你在这部分探究中观察到的一些关系。通过观察感兴趣的特性，是否存在相互促进的特性？
+质量高的葡萄酒，伴随着低挥发性酸的特性和高酒精的特性。
+
+### 这些特性之间是否存在有趣或惊人的联系呢？
+应为挥发性酸含量太高会导致令人不快的醋味，所以质量打分高的葡萄酒都能保证该指标偏低。另外高酒精一定程度上说明发酵更加充分，也是重要因素之一。
+
+
+### 选项：你是否创建过数据集的任何模型？讨论你模型的优缺点。
+通过加入酒精、挥发性酸、柠檬酸、固定酸和log(硫酸盐)进行线性拟合，最终模型可以解释35.3%的红葡萄酒数据。
+遗憾的是，尽管发现了一定的规律，但是仍然无法通过简单的线性模型表示大部分的数据。
+
+------
+
+# 定稿图与总结
+
+### 绘图一
+```{r echo=FALSE, message=FALSE, warning=FALSE, Plot_One}
+# 质量打分的分布情况
+ggplot(aes(x = quality), data = winedf)  +
+  geom_histogram() +
+  ggtitle('质量打分的分布情况') + 
+  labs(x="质量(分)", y="记录数(个)") 
+```
+
+### 描述一
+质量打分指标，最小值是3，最大值是8，中位数6，成正态分布。
+
+
+### 绘图二
+```{r echo=FALSE, message=FALSE, warning=FALSE, Plot_Two}
+# 质量打分与酒精度
+ggplot(aes(x = as.factor(quality), y = alcohol), data = winedf) +
+geom_jitter(alpha = 1/5) +
+geom_boxplot(alpha = 1/5, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1)) +
+  ggtitle('质量打分与酒精度') + 
+  labs(x="质量(分)", y="酒精度(% by volume)") 
+```
+
+### 描述二
+可以看到酒精并不是完全和质量打分线性相关的。
+从5到8分的时候，酒精含量是不断上升的。
+3到4分的时候，酒精含量也是在上升的。
+但是，4分到5分，酒精含量存在一个落差。
+另外可以发现的是，数据集中的数据大部分都是落在5分和6分中的，这里符合正态分布。
+
+
+### 绘图三
+```{r echo=FALSE, message=FALSE, warning=FALSE, Plot_Three}
+# 质量打分与挥发性酸和酒精
+ggplot(aes(x = as.factor(quality), y = volatile.acidity), data = winedf) +
+geom_jitter(alpha = 1/2,aes(color = cut(alcohol, breaks = 5)))+
+  scale_color_brewer(type = 'qual',
+    guide = guide_legend(title = '酒精度分组', reverse = T,
+    override.aes = list(alpha = 1, size = 2))) +  
+  geom_boxplot(alpha = 1/2, color = "blue") +
+  stat_summary(fun.y = "mean", geom = "point", color = "red")+
+  geom_smooth(method='lm', aes(group = 1)) +
+  ggtitle('质量打分与挥发性酸和酒精') + 
+  labs(x="质量(分)", y="挥发性酸 (acetic acid - g / dm^3)") 
+```
+
+### 描述三
+伴随着质量打分的升高，挥发性酸在不断的降低。这里可以解释为挥发性的酸会影响葡萄酒的气味，导致质量打分降低。另一方面，当挥发性酸相同的时候，酒精浓度高的，质量打分更高。
+
+------
+
+# 反思
+这是一个拥有1599条记录，共12个变量（包含打分）的红葡萄酒数据集。其中我认为最终要的指标是酒精浓度、挥发性酸含量和质量打分。打分是范围0到10分的打分指标。该数据集质量打分最小值是3，最大值是8，中位数6，成正态分布。除此之外，固定酸与硫酸盐也是重要指标，因为他们会对一级指标产生影响。
+
+所以，到目前为止可以得出的结论是为了提升红葡萄酒的质量，可以增加酒精与柠檬酸，降低挥发性酸。另外，还可以增加固定酸与硫酸盐。尽管如此，最后的线性模型值只能解释35.3%的点。可以看出，质量打分的评估模型比较复杂，目前为止只找到了一部分的模式。也许还需要引入其他的测试指标或者建立更复杂的模型。
+
+------
+
+### 参考链接：
+> https://www.rdocumentation.org/packages/GGally/versions/1.4.0/topics/ggpairs   
+https://www.rdocumentation.org/packages/base/versions/3.6.1/topics/cut
+https://stackoverflow.com/questions/34983118/how-do-i-create-a-copy-of-a-data-frame-in-r/51143421
+https://stackoverflow.com/questions/6286313/remove-an-entire-column-from-a-data-frame-in-r
+https://sebastiansauer.github.io/figure_sizing_knitr/
+https://daringfireball.net/projects/markdown/syntax#list
+https://www.zhihu.com/question/20773293
